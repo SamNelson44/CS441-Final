@@ -1,3 +1,4 @@
+import copy
 
 X = 'X'
 O = 'O'
@@ -56,9 +57,33 @@ class ConnectFour:
             #increase chip size for the column
             self.chips_size[column] += 1
             self.switch_player()
-        
+    
+    def get_state(self):
+        """
+        Returns: A copy of current state representation using deep copy
+        """
+        return copy.deepcopy(self.board)
+    
+    @classmethod
+    def possible_actions(cls, state):
+        """
+        Given a game state 2D array, calculate possible place to drop column
 
+        Returns a set of numbers of possible action
+        """
+        actions = set()
 
+        #if there is an empty spot at the top, we can drop chips at the column
+        for column in range(WIDTH):
+            if state[0][column] == EMPTY:
+                actions.add(column)
+        return actions
+    
+    def terminal(self):
+        """
+        Check if the game has ended
+        """
+    
 game = ConnectFour()
 game.place(1)
 game.place(1)
