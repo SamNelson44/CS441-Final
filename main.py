@@ -5,6 +5,7 @@ O = 'O'
 EMPTY = None
 WIDTH= 7
 HEIGHT = 6
+WINCONDITION = 4
 
 class ConnectFour:
     def __init__(self):
@@ -83,6 +84,75 @@ class ConnectFour:
         """
         Check if the game has ended
         """
+        #check for vertical wins
+
+        # for column, column_size in enumerate(self.chips_size):
+        for column in range(WIDTH):
+                #start at the first chip
+                current = self.board[HEIGHT -1][column]
+                
+                connecting = 1
+                #row should start at -2 of Height
+                for i in range(2, HEIGHT + 1):
+                    if current== None:
+                        break
+                    next_row = HEIGHT - i
+                    next_chip = self.board[next_row][column]
+                    if next_chip != EMPTY and current == next_chip:
+                        connecting += 1
+                        if connecting == WINCONDITION:
+                            return current
+                    else:
+                        current = next_chip
+                        connecting = 1
+        
+        #check for horizontal
+        for i in range(HEIGHT):
+            row = HEIGHT - 1 - i
+            current = self.board[row][0]
+            connecting = 1
+
+            for j in range(WIDTH -1):
+                if current == None:
+                    continue
+                next_column = j + 1
+                next_chip = self.board[row][next_column]
+                if next_chip != EMPTY and current == next_chip:
+                    connecting += 1
+                    if connecting == WINCONDITION:
+                        return current
+                else:
+                    current = next_chip
+                    connecting = 1
+
+
+        # for column, column_size in enumerate(self.chips_size):
+        #     current = self.board[HEIGHT -1][column]
+        #     if current == None:
+        #         continue
+        #     connecting = 1
+        #     for j in range(2, column_size + 1)
+        # for j in range(HEIGHT):
+        #     row = HEIGHT - i
+        #     current = self.board[row][j]
+        #     if current == None:
+        #         continue
+        #     connecting = 1
+        #     #start checking column at 2
+        #     for j in range(2, WIDTH):
+                
+
+
+
+
+                    
+        return None
+
+                            
+
+
+
+
     
 game = ConnectFour()
 game.place(1)
