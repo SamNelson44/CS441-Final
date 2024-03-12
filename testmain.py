@@ -77,7 +77,7 @@ class TestConnectFour(unittest.TestCase):
             self.game.chips_size[i] = 6
 
         winner = self.game.terminal()
-        self.assertIsNone(winner, "Unexpected winner detected")
+        self.assertIsNone(winner, f'Unexpected winer: {winner}')
 
 
     def test_horizontal_win(self):
@@ -95,6 +95,46 @@ class TestConnectFour(unittest.TestCase):
 
         winner = self.game.terminal()
         self.assertEqual(winner, 'O', "Horizontal win not detected")
+    
+    def test_diagonal_win(self):
+        # Create a scenario where there is a horizontal win
+        self.game.board = [
+            ['X', 'O', 'X', 'O', 'X', 'O', 'X'],
+            ['O', 'X', 'O', 'X', 'O', 'X', 'O'],
+            ['X', 'O', 'X', 'X', 'X', 'O', 'X'],
+            ['X', 'O', 'X', 'O', 'X', 'O', 'X'],
+            ['O', 'X', 'O', 'X', 'O', 'X', 'O'],
+            ['X', 'X', 'O', 'X', 'O', 'X', 'O']
+        ]
+        for i in range(WIDTH):
+            self.game.chips_size[i] = 6
+
+        winner = self.game.terminal()
+        self.assertEqual(winner, 'X', "Diagonal Win not detected at row 6")
+
+        self.game.board = [
+            ['X', 'O', 'X', 'O', 'X', 'O', 'X'],
+            ['O', 'X', 'O', 'X', 'O', 'X', 'O'],
+            ['X', 'O', 'X', 'X', 'X', 'O', 'X'],
+            ['X', 'O', 'O', 'O', 'X', 'O', 'X'],
+            ['O', 'X', 'O', 'O', 'O', 'X', 'O'],
+            ['O', 'X', 'O', 'X', 'O', 'X', 'O']
+        ]
+        winner = self.game.terminal()
+        self.assertEqual(winner, 'O', "Diagonal win not detected")
+
+        self.game.board = [
+            ['X', 'X', 'X', 'O', 'X', 'O', 'X'],
+            ['O', 'O', 'O', 'X', 'O', 'X', 'O'],
+            ['X', 'X', 'X', 'O', 'X', 'O', 'X'],
+            ['X', 'O', 'X', 'O', 'X', 'X', 'X'],
+            ['O', 'X', 'O', 'O', 'O', 'X', 'O'],
+            ['O', 'X', 'X', 'X', 'O', 'X', 'O']
+        ]
+        winner = self.game.terminal()
+        self.assertEqual(winner, 'X', "Diagonal win not detected at (1,3)")
+
+
 
 if __name__ == '__main__':
     unittest.main()

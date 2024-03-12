@@ -86,13 +86,12 @@ class ConnectFour:
         """
         #check for vertical wins
 
-        # for column, column_size in enumerate(self.chips_size):
         for column in range(WIDTH):
-                #start at the first chip
+                #start at the first chip at [5][0] index
                 current = self.board[HEIGHT -1][column]
                 
                 connecting = 1
-                #row should start at -2 of Height
+                #next chip to compare should start at row 4, Height - 2
                 for i in range(2, HEIGHT + 1):
                     if current== None:
                         break
@@ -124,28 +123,86 @@ class ConnectFour:
                 else:
                     current = next_chip
                     connecting = 1
+        
 
+        #checking for diagonals going upward left to right: /
+        for column in range(WIDTH):
+            #start at the first chip [5][0]
+            current = self.board[HEIGHT -1][column]
+            
+            connecting = 1
+            #next row to compare should be 4th row index, Height -2
+            #next column to compare should be 2nd column index
+            for i in range(2, HEIGHT + 1):
+                if current== None:
+                    break
+                next_row = HEIGHT - i
+                next_column = column + (i-1)
+                try:
+                    next_chip = self.board[next_row][next_column] #adjust column to be + 1 of current column
+                except IndexError:
+                    break #go to next chip if out of bounds
+                if next_chip != EMPTY and current == next_chip:
+                    connecting += 1
+                    if connecting == WINCONDITION:
+                        return current
+                else:
+                    current = next_chip
+                    connecting = 1
+        
+        #check for diagonal downward going left to right: \    
+        #start at row 2: HEIGHT(6) - (WINCONDITION)4
+        current_row = HEIGHT - WINCONDITION
+        current_col = 0
+        while current_row>= 0:
+            current = self.board[current_row][0]
+            next_row = current_row
+            next_col = current_col
+            connecting = 1
+            while True:
+                next_row += 1
+                next_col += 1
+                #may be out of bounds array
+                try:
+                    next_chip = self.board[next_row][next_col]
+                except IndexError:
+                    #go to next row if we go out of array
+                    current_row -= 1
+                    break
+                if next_chip != EMPTY and next_chip == current:
+                    connecting += 1
+                    if connecting == WINCONDITION:
+                        return current
+                else:
+                    current = next_chip
+                    connecting = 1
 
-        # for column, column_size in enumerate(self.chips_size):
-        #     current = self.board[HEIGHT -1][column]
-        #     if current == None:
-        #         continue
-        #     connecting = 1
-        #     for j in range(2, column_size + 1)
-        # for j in range(HEIGHT):
-        #     row = HEIGHT - i
-        #     current = self.board[row][j]
-        #     if current == None:
-        #         continue
-        #     connecting = 1
-        #     #start checking column at 2
-        #     for j in range(2, WIDTH):
-                
-
-
-
-
-                    
+        #check for each column
+        #start at col 1 until 3 away from WIDTH (WIDTH - (WINCONDITION - 1))
+        current_row = 0
+        current_col = 1
+        while current_col < (WIDTH - (WINCONDITION -1)):
+            connecting = 1
+            current = self.board[current_row][current_col]
+            next_row = current_row
+            next_col = current_col
+            while True:
+                next_row += 1
+                next_col += 1
+                #may be out of bounds array
+                try:
+                    next_chip = self.board[next_row][next_col]
+                except IndexError:
+                    #go to next colum if we go out of array
+                    current_col += 1
+                    break
+                if next_chip != EMPTY and next_chip == current:
+                    connecting += 1
+                    if connecting == WINCONDITION:
+                        return current
+                else:
+                    current = next_chip
+                    connecting = 1
         return None
 
                             
