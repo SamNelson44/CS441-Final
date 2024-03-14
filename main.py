@@ -47,7 +47,7 @@ class ConnectFour:
         """
         if column < 0 or column >= WIDTH:
             raise ValueError(f'Invalid column :{column}')
-        elif self.chips_size[column] == HEIGHT:
+        elif self.chips_size[column] > HEIGHT:
             raise ValueError(f'Too many pieces at column {column}')
         else:
             #check which row to add the chip using chips_size at column
@@ -211,14 +211,14 @@ class ConnectFour:
 
 
     
-game = ConnectFour()
-game.place(1)
-game.place(1)
-game.place(1)
-game.place(1)
-game.place(1)
-game.place(1)
+# game = ConnectFour()
+# game.place(1)
+# game.place(1)
+# game.place(1)
+# game.place(1)
+# game.place(1)
+# game.place(1)
 #placing one more at column 1 will raise exception
 # game.place(1)
-game.place(2)
-print(game)
+# game.place(2)
+# print(game)
