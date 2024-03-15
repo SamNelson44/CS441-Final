@@ -47,12 +47,12 @@ class ConnectFour:
         """
         if column < 0 or column >= WIDTH:
             raise ValueError(f'Invalid column :{column}')
-        elif self.chips_size[column] > HEIGHT:
+        elif self.chips_size[column] == HEIGHT:
             raise ValueError(f'Too many pieces at column {column}')
         else:
             #check which row to add the chip using chips_size at column
             #add at the end of the array
-            row = (HEIGHT - 1) - self.chips_size[column]
+            row = self.chips_size[column]
             self.board[row][column] = self.current_player
 
             #increase chip size for the column
@@ -79,138 +79,46 @@ class ConnectFour:
             if state[0][column] == EMPTY:
                 actions.add(column)
         return actions
-    
+
     def terminal(self):
         """
-        Check if the game has ended
+        Check if the game has a winner or draw
+
+        Returns:
+            'X' or 'O' if there is one winner.  None if no winner
         """
-        #check for vertical wins
+        directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
 
-        for column in range(WIDTH):
-                #start at the first chip at [5][0] index
-                current = self.board[HEIGHT -1][column]
-                
-                connecting = 1
-                #next chip to compare should start at row 4, Height - 2
-                for i in range(2, HEIGHT + 1):
-                    if current== None:
-                        break
-                    next_row = HEIGHT - i
-                    next_chip = self.board[next_row][column]
-                    if next_chip != EMPTY and current == next_chip:
-                        connecting += 1
-                        if connecting == WINCONDITION:
-                            return current
-                    else:
-                        current = next_chip
-                        connecting = 1
-        
-        #check for horizontal
-        for i in range(HEIGHT):
-            row = HEIGHT - 1 - i
-            current = self.board[row][0]
-            connecting = 1
-
-            for j in range(WIDTH -1):
-                if current == None:
-                    continue
-                next_column = j + 1
-                next_chip = self.board[row][next_column]
-                if next_chip != EMPTY and current == next_chip:
-                    connecting += 1
-                    if connecting == WINCONDITION:
-                        return current
-                else:
-                    current = next_chip
-                    connecting = 1
-        
-
-        #checking for diagonals going upward left to right: /
-        for column in range(WIDTH):
-            #start at the first chip [5][0]
-            current = self.board[HEIGHT -1][column]
-            
-            connecting = 1
-            #next row to compare should be 4th row index, Height -2
-            #next column to compare should be 2nd column index
-            for i in range(2, HEIGHT + 1):
-                if current== None:
-                    break
-                next_row = HEIGHT - i
-                next_column = column + (i-1)
-                try:
-                    next_chip = self.board[next_row][next_column] #adjust column to be + 1 of current column
-                except IndexError:
-                    break #go to next chip if out of bounds
-                if next_chip != EMPTY and current == next_chip:
-                    connecting += 1
-                    if connecting == WINCONDITION:
-                        return current
-                else:
-                    current = next_chip
-                    connecting = 1
-        
-        #check for diagonal downward going left to right: \    
-        #start at row 2: HEIGHT(6) - (WINCONDITION)4
-        current_row = HEIGHT - WINCONDITION
-        current_col = 0
-        while current_row>= 0:
-            current = self.board[current_row][0]
-            next_row = current_row
-            next_col = current_col
-            connecting = 1
-            while True:
-                next_row += 1
-                next_col += 1
-                #may be out of bounds array
-                try:
-                    next_chip = self.board[next_row][next_col]
-                except IndexError:
-                    #go to next row if we go out of array
-                    current_row -= 1
-                    break
-                if next_chip != EMPTY and next_chip == current:
-                    connecting += 1
-                    if connecting == WINCONDITION:
-                        return current
-                else:
-                    current = next_chip
-                    connecting = 1
-
-        #check for each column
-        #start at col 1 until 3 away from WIDTH (WIDTH - (WINCONDITION - 1))
-        current_row = 0
-        current_col = 1
-        while current_col < (WIDTH - (WINCONDITION -1)):
-            connecting = 1
-            current = self.board[current_row][current_col]
-            next_row = current_row
-            next_col = current_col
-            while True:
-                next_row += 1
-                next_col += 1
-                #may be out of bounds array
-                try:
-                    next_chip = self.board[next_row][next_col]
-                except IndexError:
-                    #go to next colum if we go out of array
-                    current_col += 1
-                    break
-                if next_chip != EMPTY and next_chip == current:
-                    connecting += 1
-                    if connecting == WINCONDITION:
-                        return current
-                else:
-                    current = next_chip
-                    connecting = 1
+        for row in range(HEIGHT):
+            for col in range(WIDTH):
+                for dy, dx in directions:
+                    winner = self.check_consecutive(row, col, dy, dx)
+                    if winner is not None:
+                        return winner
         return None
 
-                            
+    def check_consecutive(self, row, col, dy, dx):
+        """
+        Parameters:
+            row, col: starting location for chip
+            dy, dx : which way to compare chips
+        Returns:
+            'X', 'O', or None if no winner
+        """
+        current_chip = self.board[row][col]
+        if current_chip is None:
+            return None
 
+        for _ in range(WINCONDITION - 1):
+            row += dy
+            col += dx
+            # Check if position is out of bounds
+            if not (0 <= row < HEIGHT and 0 <= col < WIDTH):
+                return None
+            if self.board[row][col] != current_chip:
+                return None
+        return current_chip
 
-
-
-    
 # game = ConnectFour()
 # game.place(1)
 # game.place(1)
