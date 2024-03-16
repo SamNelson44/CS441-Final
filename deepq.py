@@ -17,17 +17,18 @@ class QNetwork(nn.Module):
         self.fc2 = nn.Linear(hidden_size, output_size)
         self.output_size = output_size
 
-
     def forward(self, x):
         x = x.flatten(start_dim = 0)
         x = torch.relu(self.fc1(x))
         x = self.fc2(x)
         return x
    
-# Initialize Q-network
-input_size = 6 * 7  # Size of the game board
+# Q-network
+input_size = 6 * 7 
 hidden_size = 128
-output_size = 7  # Number of possible actions
+
+# Number of possible actions
+output_size = 7  
 q_network = QNetwork(input_size, hidden_size, output_size)
 
 # Define optimizer and loss function
@@ -36,23 +37,25 @@ loss_fn = nn.MSELoss()
 
 rl_agent = RLAgent(q_network, optimizer, loss_fn)
 
-
-connect_four_env = ConnectFour()
+game = ConnectFour()
 
 # Training loop
 num_episodes = 3000
 evaluation_interval = 100
 evaluation_episodes = 100
 for episode in range(num_episodes):
-    state = connect_four_env.reset()  # Reset environment to initial state
+    #reset environment if game ends
+    state = game.reset()  
     done = False
     while not done:
+        #Convert the states into numbers so they can be input in the NN
+        state = game.get_state()
+
         # Choose action based on epsilon-greedy policy
-        state = connect_four_env.get_state()
         action = rl_agent.choose_action(state)
         
         # Take action in the environment
-        next_state, reward, done = connect_four_env.place(action)
+        next_state, reward, done = game.place(action)
 
         # Update Q-network
         rl_agent.update(state, action, next_state, reward)
@@ -61,7 +64,7 @@ for episode in range(num_episodes):
         if not actions:
             actions = ConnectFour.possible_actions(next_state)
         action = random.choice(list(actions))
-        op_next, op_reward, done = connect_four_env.place(action)
+        op_next, op_reward, done = game.place(action)
         #tie
         if done and op_reward != -1:
             rl_agent.update(state, action, next_state, 0.5)
@@ -71,33 +74,34 @@ for episode in range(num_episodes):
         # Move to next state
         state = next_state
     
-    # Evaluation phase
+    # Evaluation phase: evaluate every interval specified
     if episode % evaluation_interval == 0:
         total_wins = 0
         total_losses = 0
         total_draws = 0
+        #evaluate the agent certain amount of games, playing random opponent
         for _ in range(evaluation_episodes):
             # Initialize a new game for evaluation
-            state = connect_four_env.reset()
+            state = game.reset()
             done = False
             while not done:
-                state = connect_four_env.get_state()
+                state = game.get_state()
                 # Agent's turn
                 action = rl_agent.choose_action(state)
                 try:
-                    next_state, reward, done = connect_four_env.place(action)
+                    next_state, reward, done = game.place(action)
                 except ValueError:
                     action = rl_agent.choose_action(state)
 
                 if done:
                     break
 
-                # Opponent's turn (random player for simplicity)
+                #Random pponent's turn
                 actions = ConnectFour.possible_actions(next_state)
                 opponent_action = random.choice(list(actions))
-                next_state, reward, done = connect_four_env.place(opponent_action)
+                next_state, reward, done = game.place(opponent_action)
 
-            # Update evaluation metrics based on game outcome
+            #if agent won increment score
             if reward == 1.0:
                 total_wins += 1
             elif reward == -1.0:
@@ -105,7 +109,7 @@ for episode in range(num_episodes):
             else:
                 total_draws += 1
 
-        # Calculate and print evaluation metrics
+        # Calculate average win and loss
         win_rate = total_wins / evaluation_episodes
         loss_rate = total_losses / evaluation_episodes
         draw_rate = total_draws / evaluation_episodes

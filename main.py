@@ -98,11 +98,11 @@ class ConnectFour:
         """
         Place a chip for self.current_player and update the game state.
 
-        Args:
-            column (int): The column where the player wants to place the chip.
+        Parameters:
+            column: Which column to place chip
 
         Returns:
-            next_state :The updated state of the game board after placing the chip.
+            next_state : State after actioin
             reward: The reward obtained by the agent for the action.
             done (bool): A flag indicating whether the episode has terminated.
         """
@@ -121,20 +121,22 @@ class ConnectFour:
         winner = self.terminal()
         if winner is not None:
             done = True
-            # Give a positive reward to the winning player and negative reward to the losing player
+            # Give a reward if agent won, -1 if lost
             reward = 1.0 if winner == 'X' else -1.0
+
+        # Check if the game board is full (draw)
         elif all(self.board[row][col] is not None for col in range(self.WIDTH) for row in range(self.HEIGHT)):
-            # Check if the game board is full (draw)
             done = True
-            reward = 0.0  # Reward for draw
+            reward = 0.0  
         else:
+            #game hasn't ended so no rewards
             done = False
-            reward = 0.0  # No immediate reward if the game is ongoing
+            reward = 0.0
 
         # Switch the current player for the next turn
         self.switch_player()
 
-        # Return the updated state, reward, and termination flag
+        # Return the updated state, reward, and whether game ends
         next_state = self.get_state()
         return next_state, reward, done
     
