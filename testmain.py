@@ -119,6 +119,7 @@ class TestConnectFour(unittest.TestCase):
 
         winner = self.game.terminal()
         self.assertEqual(winner, 'X', "Horizontal win not detected")
+
         self.game.board = [
             ['O', None,'O','X','X','X','X'],
             [None, None, None, None,'O', None, None],
@@ -127,7 +128,6 @@ class TestConnectFour(unittest.TestCase):
             [None, None, None, None, None, None, None],
             [None, None, None, None, None, None, None],
         ]
-        self.game.chips_size = [1,0,1,1,2,1,1]
         winner = self.game.terminal()
         self.assertEqual(winner, 'X', "Horizontal win not detected")
     
@@ -140,9 +140,7 @@ class TestConnectFour(unittest.TestCase):
             ['O', 'X', 'O', 'X', 'O', 'X', 'O'],
             ['X', 'X', 'O', 'X', 'O', 'X', 'O']
         ]
-        for i in range(WIDTH):
-            self.game.chips_size[i] = 6
-
+   
         winner = self.game.terminal()
         self.assertEqual(winner, 'X', "Diagonal X Win not detected at row 6")
 
@@ -167,7 +165,6 @@ class TestConnectFour(unittest.TestCase):
         ]
         winner = self.game.terminal()
         self.assertEqual(winner, 'X', "Diagonal win not detected at (1,3)")
-
 
 
 if __name__ == '__main__':
