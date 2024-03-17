@@ -8,7 +8,7 @@ class RLAgent():
         self.q_network = q_network
         self.optimizer = optimizer
         self.loss_fn = loss_fn
-        self.gamma = gamma
+        self.gamma = gamma #Discount reward
         self.epsilon = 0.5
 
     
@@ -27,13 +27,14 @@ class RLAgent():
         q_values_old = self.q_network(old_state_tensor)
         q_values_new = self.q_network(new_state_tensor)
 
-        # Calculate target Q-value using Bellman equation
+        # Calculate the actual value we want to predict for NN
         target_q_value = reward + self.gamma * q_values_new.max().item()
 
         # Update the Q-value for the chosen action
         self.optimizer.zero_grad()
         loss = self.loss_fn(q_values_old[action], torch.tensor(target_q_value))
         loss.backward()
+        # Adjust the NN based on loss function
         self.optimizer.step()
 
     def choose_action(self, state):

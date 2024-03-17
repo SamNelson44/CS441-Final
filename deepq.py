@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from main import ConnectFour
+import os
+from main import ConnectFour, WIDTH, HEIGHT
 
 import random
 
@@ -13,7 +14,10 @@ from rl import RLAgent
 class QNetwork(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(QNetwork, self).__init__()
+        #Hidden size can be experimented with
+        #first layer
         self.fc1 = nn.Linear(input_size, hidden_size)
+        #second layer
         self.fc2 = nn.Linear(hidden_size, output_size)
         self.output_size = output_size
 
@@ -24,14 +28,21 @@ class QNetwork(nn.Module):
         return x
    
 # Q-network
-input_size = 6 * 7 
+input_size = WIDTH * HEIGHT
 hidden_size = 128
 
 # Number of possible actions
-output_size = 7  
+output_size = WIDTH
 q_network = QNetwork(input_size, hidden_size, output_size)
 
-# Define optimizer and loss function
+nn_saved_path = 'q_network_checkpoint.pth'
+
+if os.path.exists(nn_saved_path):
+    # Load the model checkpoint
+    q_network.load_state_dict(torch.load('q_network_checkpoint.pth'))
+    q_network.eval()  # Set the model to evaluation mode if needed
+
+# Using Adam optimizer to tune NN weights, with learning rate
 optimizer = optim.Adam(q_network.parameters(), lr=0.001)
 loss_fn = nn.MSELoss()
 
@@ -40,8 +51,8 @@ rl_agent = RLAgent(q_network, optimizer, loss_fn)
 game = ConnectFour()
 
 # Training loop
-num_episodes = 3000
-evaluation_interval = 100
+num_episodes = 50000
+evaluation_interval = 5000
 evaluation_episodes = 100
 for episode in range(num_episodes):
     #reset environment if game ends
@@ -115,4 +126,5 @@ for episode in range(num_episodes):
         draw_rate = total_draws / evaluation_episodes
         print(f"Episode {episode}: Win Rate = {win_rate}, Loss Rate = {loss_rate}, Draw Rate = {draw_rate}")
 
-
+#save the NN
+torch.save(q_network.state_dict(), 'q_network_checkpoint.pth')
