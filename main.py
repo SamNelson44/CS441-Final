@@ -4,9 +4,9 @@ import numpy as np
 X = 'X'
 O = 'O'
 EMPTY = None
-WIDTH= 7
-HEIGHT = 6
-WINCONDITION = 4
+WIDTH= 6
+HEIGHT = 7
+WINCONDITION = 2
 
 def check_valid_state(board):
     """
@@ -36,8 +36,8 @@ class ConnectFour:
             optional 2D state
             If None, the board will all be empty
         """
-        self.WIDTH = 7
-        self.HEIGHT = 6
+        self.WIDTH = WIDTH
+        self.HEIGHT = HEIGHT
         self.EMPTY = None
        
             

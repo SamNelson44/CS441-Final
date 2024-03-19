@@ -9,7 +9,7 @@ class RLAgent():
         self.optimizer = optimizer
         self.loss_fn = loss_fn
         self.gamma = gamma #Discount reward
-        self.epsilon = 0.5
+        self.epsilon = 0.2
 
     
     def update(self, old_state, action, new_state, reward):

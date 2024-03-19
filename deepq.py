@@ -35,12 +35,12 @@ hidden_size = 128
 output_size = WIDTH
 q_network = QNetwork(input_size, hidden_size, output_size)
 
-nn_saved_path = 'q_network_checkpoint.pth'
+# nn_saved_path = 'q_network_checkpoint.pth'
 
-if os.path.exists(nn_saved_path):
-    # Load the model checkpoint
-    q_network.load_state_dict(torch.load('q_network_checkpoint.pth'))
-    q_network.eval()  # Set the model to evaluation mode if needed
+# if os.path.exists(nn_saved_path):
+#     # Load the model checkpoint
+#     q_network.load_state_dict(torch.load('q_network_checkpoint.pth'))
+#     q_network.eval()  # Set the model to evaluation mode if needed
 
 # Using Adam optimizer to tune NN weights, with learning rate
 optimizer = optim.Adam(q_network.parameters(), lr=0.001)
@@ -52,7 +52,7 @@ game = ConnectFour()
 
 # Training loop
 num_episodes = 50000
-evaluation_interval = 5000
+evaluation_interval = 3000
 evaluation_episodes = 100
 for episode in range(num_episodes):
     #reset environment if game ends
@@ -127,4 +127,4 @@ for episode in range(num_episodes):
         print(f"Episode {episode}: Win Rate = {win_rate}, Loss Rate = {loss_rate}, Draw Rate = {draw_rate}")
 
 #save the NN
-torch.save(q_network.state_dict(), 'q_network_checkpoint.pth')
+# torch.save(q_network.state_dict(), 'q_network_checkpoint.pth')
