@@ -4,6 +4,7 @@ from copy import deepcopy
 import numpy as np
 import random
 import time
+from random import shuffle
 
 class State(ConnectFour):
     def __init__(self):
@@ -67,31 +68,36 @@ class MiniMax():
                     tot += self.defense * pow(self.discount, 4 - min(4, k)) * pow(self.depth_discount, depth)
         return tot
 
-    def mini_max_helper(self, state, depth, get_max: bool):
+    def mini_max_helper(self, state, depth, get_max: bool, alpha = -np.inf, beta=np.inf):
+        def scale(arr, epsilon=1e-6):
+            # Min-max scaling with Laplace smoothing
+            min_val = min(arr) + epsilon
+            max_val = max(arr) + epsilon
+            scaled_arr = [(x + epsilon - min_val) / (max_val - min_val + epsilon) + epsilon for x in arr]
+            
+            sum_probabilities = sum(scaled_arr)
+            scaled_arr = [x/sum_probabilities for x in scaled_arr]
+    
+            return scaled_arr
         def get_best(movs, evals, get_max):
             if len(movs) == 0:
                 return (None, 0)
-            #size >= 3 and no zero
-            # test_eval = list(map(lambda x: x == 0, sorted(evals, reverse=get_max)[:3]))
-            # if len(test_eval) > 2 and not any(test_eval):
-            #     #normalized choice
-            #     s = sum(sorted(evals, reverse=get_max)[:3])
-            #     p = list(map(lambda x: x/s, sorted(evals, reverse=get_max)[:3]))
-            #     top3 = np.random.choice(range(3), size=1, p= p)[0]
-            # else:
-            #     top3 = 0
-            top3 = 0
-            best_mov, best_score = sorted(list(zip(movs, evals)), reverse=True, key=lambda x:x[1])[top3]
+            # k = np.random.choice(range(len(movs)), size=1, p= scale(evals))[0]
+            best_mov, best_score = sorted(list(zip(movs, evals)), reverse=True, key=lambda x:x[1])[0]
+            # either return max score or -1*max score of opponent
             if get_max:
                 return (best_mov, best_score)
             return (best_mov, best_score*-1)
         
         nxt_moves = state.next_possible_moves()
+        shuffle(nxt_moves)
         #opponent move
         if not get_max:
             board = state.inverted_board()
+            bestVal = np.inf
         else:
             board = state.board
+            bestVal = -np.inf
         eval_movs = []
         for move in nxt_moves:
             #drill down (DFS)
@@ -102,13 +108,25 @@ class MiniMax():
 
                 #winning move -> do not need to look further down.
                 if 4 in record_x.keys():
-                    eval_movs += [self.evaluate_move(record_x, True, depth) + self.evaluate_move(record_o, False, depth)]
+                    eval_movs += [(move, self.evaluate_move(record_x, True, depth) + self.evaluate_move(record_o, False, depth))]
                 else:
                     nxt_state = deepcopy(state)
                     nxt_state.place(move[0], move[1])
-                    nxt_mov, nxt_score = self.mini_max_helper(nxt_state, depth+1, not get_max)
+                    nxt_mov, nxt_score = self.mini_max_helper(nxt_state, depth+1, not get_max, alpha, beta)
+
+                    #alpha-beta pruning
+                    if get_max:
+                        bestVal = max(bestVal, nxt_score) 
+                        alpha = max(alpha, bestVal)
+                    else:
+                        bestVal = min(bestVal, nxt_score)
+                        beta = min (beta, bestVal)
+                        if beta <= alpha:
+                            break
+
+
                     #best score can get from subsequent moves + current board reward
-                    eval_movs += [self.evaluate_move(record_x, True, depth) + self.evaluate_move(record_o, False, depth) + nxt_score]
+                    eval_movs += [(move, self.evaluate_move(record_x, True, depth) + self.evaluate_move(record_o, False, depth) + nxt_score)]
 
                 # nxt_state.board[move[0]][move[1]] = nxt_state.current_player
                 # nxt_state.chips_size[move[1]] += 1
@@ -118,13 +136,12 @@ class MiniMax():
             else:
                 record_x = self.count_lines(board, move[0], move[1])
                 record_o = self.count_lines(state.inverted_board(), move[0], move[1])
-                eval_movs += [self.evaluate_move(record_x, True, depth) + self.evaluate_move(record_o, False, depth)]
+                eval_movs += [(move, self.evaluate_move(record_x, True, depth) + self.evaluate_move(record_o, False, depth))]
         
-        mov, score = get_best(nxt_moves, eval_movs, get_max)
+        mov, score = get_best([x[0] for x in eval_movs], [x[1] for x in eval_movs], get_max)
         return (mov, score)
     
     def mini_max_move(self, is_X = True):
-        """CURRENTLY ONLY APPLICABLE FOR X PLAYER"""
         if is_X:
             best_mov , best_score = self.mini_max_helper(self.state, 0, True)
         else:
@@ -157,7 +174,8 @@ class MiniMax():
             else:
                 return 'O wins'
         #if there is only one move left -> game over
-        if len(self.state.next_possible_moves()) == 1:
+        if sum(self.state.chips_size) == 41:
+            print(self.state.chips_size)
             return 'Draw!'
         return None
 
