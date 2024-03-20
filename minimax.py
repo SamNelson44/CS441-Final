@@ -175,7 +175,7 @@ class MiniMax():
                 return 'O wins'
         #if there is only one move left -> game over
         if sum(self.state.chips_size) == 41:
-            print(self.state.chips_size)
+            # print(self.state.chips_size)
             return 'Draw!'
         return None
 
