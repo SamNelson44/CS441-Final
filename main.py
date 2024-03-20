@@ -4,9 +4,9 @@ import numpy as np
 X = 'X'
 O = 'O'
 EMPTY = None
-WIDTH= 6
-HEIGHT = 7
-WINCONDITION = 2
+WIDTH= 7
+HEIGHT = 6
+WINCONDITION = 4
 
 def check_valid_state(board):
     """
