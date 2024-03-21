@@ -57,8 +57,10 @@ class State(ConnectFour):
                     next_i = i + x * dir
                     next_j = j + y * dir
                 
+                #Win condition met
                 if consecutive_count >= GOAL:
                     result = True
+                    self.winner = self.board[i][j]
         return result
 
 
