@@ -1,4 +1,4 @@
-from main import ConnectFour, WIDTH, HEIGHT
+from main import ConnectFour, WIDTH, HEIGHT, EMPTY
 from collections import defaultdict
 from copy import deepcopy
 import numpy as np
@@ -6,6 +6,7 @@ import random
 import time
 from random import shuffle
 
+GOAL = 3
 NUM_PLAYERS = 2
 STATE_SIZE = HEIGHT * WIDTH * (NUM_PLAYERS + 1)
 ACTION_SIZE = HEIGHT * WIDTH
@@ -14,23 +15,12 @@ ACTION_SIZE = HEIGHT * WIDTH
 class State(ConnectFour):
     def __init__(self):
         super().__init__()
+        self.winner = None
 
-    def next_possible_moves(self):
-        res = []
-        for idx,chips in enumerate(self.chips_size):
-            if chips < HEIGHT:
-                res += [(HEIGHT-chips-1, idx)]
-        return res
-    
-    def place(self, row, col):
-        if self.board[row][col] == 'X' or self.board[row][col] == 'O':
-            raise ValueError(f'Board position is already taken at {row},{col}?\n {self.board} \n{self.chips_size}\n{self.next_possible_moves()}')
-        self.board[row][col] = self.current_player
+    def reset_board(self):
+        self.board = [[None]*WIDTH for i in range(HEIGHT)]
+        self.chips_size = [0]* WIDTH
 
-        #increase chip size for the column
-        self.chips_size[col] += 1
-        self.switch_player()
-    
     def inverted_board(self):
         tmp = deepcopy(self.board)
         for i in range(len(self.board)):
@@ -41,10 +31,40 @@ class State(ConnectFour):
                     tmp[i][j] = 'X'
         return tmp
     
-    
-    def reset_board(self):
-        self.board = [[None]*WIDTH for i in range(HEIGHT)]
-        self.chips_size = [0]* WIDTH
+    def check_win(self, i, j):
+        if self.board[i][j] == EMPTY:
+            return False
+        
+        #Up, right, up-right diagonal, down-right diagonal
+        directions = [(1,0), (0,1), (1,1), (1,-1)]
+        result = False
+
+        for x, y in directions:
+            consecutive_count = 1 #current token
+            token = self.board[i][j]
+
+            #For each direction, check the direction and its opposite
+            for dir in [1, -1]:
+                next_i = i + x * dir
+                next_j = j + y * dir
+
+                #Move in direction, until token mismatch, or bound is reached
+                while (next_i > 0 and  next_i < WIDTH-1
+                       and next_j > 0 and  next_j < HEIGHT-1
+                       and self.board[next_i][next_j] == token and consecutive_count < GOAL):
+                    
+                    consecutive_count += 1
+                    next_i = i + x * dir
+                    next_j = j + y * dir
+                
+                if consecutive_count >= GOAL:
+                    result = True
+        return result
+
+
+
+    def get_winner(self):
+        return self.winner
 
 
 def build_neural_network(input_shape, output_shape):
@@ -77,26 +97,6 @@ class QLearningAgent:
             return self.random_action(valid_actions)
         else:
             return np.argmax(self.q_values[state, valid_actions])
-
-    # Thahn's     
-    def check_status(self, i, j):
-        def win(i, j):
-            if self.state.current_player == 'X':
-                record = self.count_lines(self.state.board, i, j)
-            else:
-                record = self.count_lines(self.state.inverted_board(), i, j)
-            return 4 in record.keys()
-        
-        if win(i, j):
-            if self.state.current_player == 'X':
-                return 'X wins'
-            else:
-                return 'O wins'
-        #if there is only one move left -> game over
-        if sum(self.state.chips_size) == 41:
-            print(self.state.chips_size)
-            return 'Draw!'
-        return None
 
     def get_reward(self, player):
         # Calculate and return the reward based on the game outcome
@@ -138,9 +138,9 @@ def evaluate_agent(games):
         state.reset_board()
         done = False
         while not done:
-            valid_actions = state.next_possible_moves()
+            valid_actions = state.possible_actions()
             action = agent.choose_action(state, valid_actions)
-            next_state, reward, done = state.step(action)
+            next_state, reward, done = state.place(action)
             if done and reward == 1:
                 wins += 1
     win_rate = wins / total_games
