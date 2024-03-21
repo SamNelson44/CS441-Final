@@ -26,6 +26,13 @@ class State(ConnectFour):
         self.chips_placed = 0
         self.inverted = False
 
+    def next_possible_moves(self):
+        res = []
+        for idx,chips in enumerate(self.chips_size):
+            if chips < HEIGHT:
+                res += [(HEIGHT-chips-1, idx)]
+        return res
+
     def place(self, column):
         """
         place a chip for self.current_player
@@ -114,7 +121,7 @@ class QLearningAgent:
         
         # Initialize neural network
         self.model = build_neural_network(STATE_SIZE, ACTION_SIZE)
-    
+
 
     def random_action(self, valid_actions):
         return random.choice(valid_actions)
@@ -129,26 +136,42 @@ class QLearningAgent:
     def get_reward(self, state):
         result = 0.0
         if state.get_winner() == 'X':
-            return 1  # Player wins
+            result = 1  # Player wins
         elif state.get_winner == None and state.board_full():
-            return 0.5  # Draw
-        else:
-            return 0  # Loss, or game is not done yet
+            result = 0.5  # Draw
+            
+        return result  # Loss, or game is not done yet
     
     def update_q_values(self, state, action, reward, next_state):
         pass
     
-    def train(self, epochs, state):
+    def train(self, epochs, random):
+        state = State()
         # Train the agent using Q-learning
-        pass
+        for _ in range(epochs):
+            state.reset_board()  # Reset the board for each episode
+            done = False
+            
+            while not done:
+                valid_actions = state.next_possible_moves()
+                if random and state.current_player == 'O':
+                    action = self.random_action(valid_actions)
+                else:
+                    action = self.choose_action(state, valid_actions)
+
+                state.place(action)
+                done = state.check_win(state.chips_size[action]-1, action)
+
+            reward = self.get_reward(state)
+            self.update_q_values(state, action, reward, next_state)
+            state = next_state
 
 
 def train_agent(epochs, random=True):
-    state = State()
     agent = QLearningAgent(STATE_SIZE, ACTION_SIZE)
     
     # Train the agent
-    agent.train(epochs, state)
+    agent.train(epochs, random)
     
 
 
@@ -164,7 +187,7 @@ def evaluate_agent(games):
         state.reset_board()
         done = False
         while not done:
-            valid_actions = state.possible_actions()
+            valid_actions = state.next_possible_moves()
             action = agent.choose_action(state, valid_actions)
 
             state.place(action)
