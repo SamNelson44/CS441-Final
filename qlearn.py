@@ -102,10 +102,13 @@ class QLearningAgent:
     def update_q_value(self, state, action, reward, next_state):
         state_str = ''.join(str(int(cell)) for row in state for cell in row)
         next_state_str = ''.join(str(int(cell)) for row in next_state for cell in row)
+
         if state_str not in self.q_table:
             self.q_table[state_str] = [0] * 7  # Initialize Q-values for this state
+
         if next_state_str not in self.q_table:
             self.q_table[next_state_str] = [0] * 7  # Initialize Q-values for next state
+
         max_next_q_value = max(self.q_table[next_state_str])
         self.q_table[state_str][action] += self.alpha * \
             (reward + self.gamma * max_next_q_value - self.q_table[state_str][action])
@@ -119,14 +122,19 @@ def play_game(agent, env):
         env.make_move(action)
         next_state = env.board.copy()
         winner = env.get_winner()
+
         if winner != 0:
             if winner == -1:
                 reward = 0.5  # Draw
+
             elif winner == 1:
                 reward = 1.0  # Player 1 wins
+
             else:
                 reward = 0.0  # Player 2 wins
+
             agent.update_q_value(state, action, reward, next_state)
+
             return winner
         else:
             reward = 0.0
@@ -153,11 +161,13 @@ if __name__ == "__main__":
     # Training the agent
     num_epochs = 10000
     wins_over_time = []
+
     for epoch in range(1, num_epochs + 1):
         play_game(agent, env)
         if epoch % 1000 == 0:
             wins = test_agent(agent, env)
             wins_over_time.append(wins)
+
     print(wins_over_time)
 
     # Plotting the results
