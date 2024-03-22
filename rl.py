@@ -102,11 +102,6 @@ class State(ConnectFour):
         return self.winner
 
 
-#def build_neural_network(input_shape, output_shape):
-    # Build a neural network model using TensorFlow/Keras
-#    pass
-
-
 # Define the Q-learning agent
 class QLearningAgent:
     def __init__(self, height, width, num_players, learning_rate=0.1, discount_factor=0.95, epsilon=0.1):
