@@ -27,16 +27,33 @@ class State(ConnectFour):
         self.inverted = False
 
     def next_possible_moves(self):
-        res = []
-        for idx,chips in enumerate(self.chips_size):
-            if chips < HEIGHT:
-                res += [(HEIGHT-chips-1, idx)]
-        return res
+        actions = []
+
+        #if there is an empty spot at the top, we can drop chips at the column
+        for column in range(WIDTH):
+            if self.board[0][column] == EMPTY:
+                actions.append(column)
+        return actions
+
+    def print_board(self):
+        for row in self.board:
+            print('|', end='')
+            for cell in row:
+                if cell == 0:
+                    print(' ', end='|')
+                elif cell == 1:
+                    print('X', end='|')
+                else:
+                    print('O', end='|')
+            print()
+        print('---------------')
 
     def place(self, column):
         """
         place a chip for self.current_player
         """
+        self.print_board
+        
         if column < 0 or column >= WIDTH:
             raise ValueError(f'Invalid column :{column}')
         elif self.chips_size[column] > HEIGHT:
@@ -117,11 +134,23 @@ class QLearningAgent:
         # Initialize neural network
        # self.model = build_neural_network(STATE_SIZE, ACTION_SIZE)
     
+    # def state_to_index(self, state):
+    #     state_str = ''.join(str(cell) for row in state.get_state() for cell in row)
+    #     row = hash(state_str) % STATE_SIZE
+    #     col = (row % ACTION_SIZE)
+    #     return row, col
+        
     def state_to_index(self, state):
-        state_str = ''.join(str(cell) for row in state.get_state for cell in row)
-        row = hash(state_str) % STATE_SIZE
-        col = (row % ACTION_SIZE)
-        return row, col
+        index = 0
+        for i in range(HEIGHT):
+            for j in range(WIDTH):
+                if state[i][j] == 'X':
+                    index = index * 3 + 1
+                elif state[i][j] == 'O':
+                    index = index * 3 + 2
+                else:
+                    index = index * 3
+        return index % STATE_SIZE
 
     def random_action(self, valid_actions):
         return random.choice(valid_actions)
@@ -131,7 +160,7 @@ class QLearningAgent:
         if random.random() < self.epsilon:
             return self.random_action(valid_actions)
         else:
-            state_index = self.state_to_index(state.get_state) 
+            state_index = self.state_to_index(state.get_state()) 
             return np.argmax(self.q_values[state_index, valid_actions])
 
     def get_reward(self, state):
@@ -142,7 +171,11 @@ class QLearningAgent:
             result = 0.5  # Draw
             
         return result  # Loss, or game is not done yet
-        
+
+    def get_q_value(self, state_index, action):
+        # Get the Q-value for a given state-action pair
+        return self.q_values[state_index, action]
+    
     def update_q_values(self, state_index, action, reward, next_state_index):
         # Get best possible move
         max_next_q_value = max(self.q_values[next_state_index])
@@ -165,7 +198,7 @@ class QLearningAgent:
                 else:
                     action = self.choose_action(state, valid_actions)
 
-                state_index = self.state_to_index(state)
+                state_index = self.state_to_index(state.get_state())
 
                 # Execute action and get next state
                 next_state = deepcopy(state)
@@ -174,12 +207,12 @@ class QLearningAgent:
                 # Is game done?
                 done = state.check_win(state.chips_size[action]-1, action)
 
-                next_state_index = self.state_to_index(next_state)
+                next_state_index = self.state_to_index(next_state.get_state())
 
                 reward = self.get_reward(state)
 
                 # Update Q-values
-                self.update_q_matrix(state_index, action, reward, next_state_index)
+                self.update_q_values(state_index, action, reward, next_state_index)
 
                 # Move to the next state
                 state = next_state
