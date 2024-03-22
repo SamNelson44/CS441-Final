@@ -169,11 +169,19 @@ class QLearningAgent:
                 else:
                     action = self.choose_action(state, valid_actions)
 
-                state.place(action)
-                done = state.check_win(state.chips_size[action]-1, action)
+            state_index = self.state_to_index(state)
+            next_state = deepcopy(state)
+            next_state.place(action)
 
-            reward = self.get_reward(state)
-            self.update_q_values(state, action, reward, next_state)
+            # Is game done?
+            done = next_state.check_win(next_state.chips_size[action]-1, action)
+
+            next_state_index = self.state_to_index(next_state)
+            reward = self.get_reward(next_state)
+
+            # Update Q-values
+            self.update_q_matrix(state_index, action, reward, next_state_index)
+
             state = next_state
 
 
