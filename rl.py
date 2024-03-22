@@ -172,7 +172,8 @@ class QLearningAgent:
         else:
             q_values = []
             for action in valid_actions:
-             q_values.append(self.get_q_value(state.get_state(), action))
+             state_index = self.state_to_index(state.get_state())
+             q_values.append(self.get_q_value(state_index, action))
 
             max_q_value = max(q_values)
 
@@ -242,7 +243,7 @@ class QLearningAgent:
             state.__str__
 
 def train_agent(epochs, random=True):
-    agent = QLearningAgent()
+    agent = QLearningAgent(learning_rate=0.3, discount_factor=0.90, epsilon=0.15)
     
     # Train the agent
     agent.train(epochs, random)
@@ -255,6 +256,7 @@ def evaluate_agent(agent, total_games):
     
     # Get agent win%
     wins = 0
+    draws = 0
         
     for i in range(total_games):
         state.reset_board()
@@ -271,6 +273,11 @@ def evaluate_agent(agent, total_games):
                 state.__str__
                 reward = agent.get_reward(state)
                 if reward <= 1.0:
-                    wins += reward
+                    wins +=1
+                elif reward <= 0.5:
+                    draws += 1
     win_rate = wins / total_games
     print("Win rate:", win_rate)
+
+    draw_rate = draws / total_games
+    print("Draw rate:", draw_rate)
