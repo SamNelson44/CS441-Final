@@ -31,7 +31,7 @@ class State(ConnectFour):
 
         #if there is an empty spot at the top, we can drop chips at the column
         for column in range(WIDTH):
-            if self.chips_size[column] < HEIGHT-1:
+            if self.chips_size[column] <= HEIGHT:
                 actions.append(column)
         return actions
 
@@ -52,12 +52,11 @@ class State(ConnectFour):
         """
         place a chip for self.current_player
         """
-        self.print_board
-
+        result = False
         if column < 0 or column >= WIDTH:
-            raise ValueError(f'Invalid column :{column}')
-        elif self.chips_size[column] > HEIGHT:
-            raise ValueError(f'Too many pieces at column {column}')
+            print(f'Invalid column :{column}', '\n')
+        elif self.chips_size[column] >= HEIGHT:
+            print(f'Too many pieces at column {column}', '\n')
         else:
             # Check which row to add the chip using chips_size at column
             # Add at the end of the array
@@ -67,7 +66,10 @@ class State(ConnectFour):
             # Increase chip size for the column
             self.chips_size[column] += 1
             self.switch_player()
-            self.chips_placed+=1
+            print('Player is: ', self.current_player, '\n')
+            self.chips_placed+=1 # Board full counter
+            result = True
+        return result
     
     def inverted_board(self):
         tmp = deepcopy(self.board)
@@ -155,13 +157,32 @@ class QLearningAgent:
     def random_action(self, valid_actions):
         return random.choice(valid_actions)
     
+    # def choose_action(self, state, valid_actions):
+    #     print("valid actions:", valid_actions, "\n")
+    #     # Epsilon-greedy
+    #     if random.random() < self.epsilon:
+    #         return self.random_action(valid_actions)
+    #     else:
+    #         state_index = self.state_to_index(state.get_state()) 
+    #         return np.argmax(self.q_values[state_index, valid_actions])
     def choose_action(self, state, valid_actions):
-        # Epsilon-greedy
-        if random.random() < self.epsilon:
-            return self.random_action(valid_actions)
+        result = -1
+        if random.random() < self.learning_rate:
+            result = random.choice(valid_actions)  # Exploration
         else:
-            state_index = self.state_to_index(state.get_state()) 
-            return np.argmax(self.q_values[state_index, valid_actions])
+            q_values = []
+            for action in valid_actions:
+             q_values.append(self.get_q_value(state.get_state(), action))
+
+            max_q_value = max(q_values)
+
+            top_choices = []
+            for i in range(len(valid_actions)):
+                if q_values[i] == max_q_value:
+                    top_choices.append(i)
+            result = valid_actions[random.choice(top_choices)]
+
+        return result
 
     def get_reward(self, state):
         result = 0.0
@@ -193,17 +214,18 @@ class QLearningAgent:
             done = False
             while not done:
                 valid_actions = state.next_possible_moves()
-                if random and state.current_player == 'O':
-                    action = self.random_action(valid_actions)
-                else:
-                    action = self.choose_action(state, valid_actions)
+                valid_move = False
+                while not valid_move: 
+                    if random and state.current_player == 'O':
+                        action = self.random_action(valid_actions)
+                    else:
+                        action = self.choose_action(state, valid_actions)
 
-                state_index = self.state_to_index(state.get_state())
+                    state_index = self.state_to_index(state.get_state())
 
-                # Execute action and get next state
-                next_state = deepcopy(state)
-                print("Action: ", action, "\n")
-                next_state.place(action)
+                    # Execute action and get next state
+                    next_state = deepcopy(state)
+                    valid_move = next_state.place(action)
                 
                 # Is game done?
                 done = state.check_win(state.chips_size[action]-1, action)
@@ -228,21 +250,22 @@ def train_agent(epochs, random=True):
     
 
 
-def evaluate_agent(games, agent):
+def evaluate_agent(agent, total_games):
     state = State()
     
     # Get agent win%
     wins = 0
-    total_games = games
         
     for i in range(total_games):
         state.reset_board()
         done = False
         while not done:
             valid_actions = state.next_possible_moves()
-            action = agent.choose_action(state, valid_actions)
-
-            state.place(action)
+            valid_move = False
+            while not valid_move:
+                action = agent.choose_action(state, valid_actions)
+                print(f'Coordinates :{state.chips_size[action]},{action}', '\n')
+                valid_move = state.place(action) # Ensure move is within bounds
             done = state.check_win(state.chips_size[action]-1, action)
             if done:
                 state.__str__

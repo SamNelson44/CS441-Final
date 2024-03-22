@@ -3,10 +3,10 @@ from rl import *
 
 
 # Training the agent
-epochs = 20000
+epochs = 10
 agent = train_agent(epochs, random=True)
 
 
 # Testing the agent
-num_games = 100
+num_games = 10
 evaluate_agent(agent, num_games)
