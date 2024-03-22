@@ -181,7 +181,7 @@ class MiniMax():
 
     def count_lines(self, board, i, j):
         def max_continous(arr):
-            max_continuous_zeros = 0
+            # max_continuous_zeros = 0
             current_continuous_zeros = 0
             
             for num in arr:
@@ -189,10 +189,12 @@ class MiniMax():
                     current_continuous_zeros += 1
                 elif num and num == 'O':
                     return 0
-                else:
-                    max_continuous_zeros = max(max_continuous_zeros, current_continuous_zeros)
+                # else:
+                #     pass
+                    # max_continuous_zeros = max(max_continuous_zeros, current_continuous_zeros)
             
-            return max(max_continuous_zeros, current_continuous_zeros)
+            # return max(max_continuous_zeros, current_continuous_zeros)
+            return current_continuous_zeros
         
         def valid_coor(x,y):
             return x >= 0 and x < HEIGHT and y >= 0 and y < WIDTH               
