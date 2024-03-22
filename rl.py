@@ -31,7 +31,7 @@ class State(ConnectFour):
 
         #if there is an empty spot at the top, we can drop chips at the column
         for column in range(WIDTH):
-            if self.board[0][column] == EMPTY:
+            if self.chips_size[column] < HEIGHT-1:
                 actions.append(column)
         return actions
 
@@ -53,7 +53,7 @@ class State(ConnectFour):
         place a chip for self.current_player
         """
         self.print_board
-        
+
         if column < 0 or column >= WIDTH:
             raise ValueError(f'Invalid column :{column}')
         elif self.chips_size[column] > HEIGHT:
@@ -202,6 +202,7 @@ class QLearningAgent:
 
                 # Execute action and get next state
                 next_state = deepcopy(state)
+                print("Action: ", action, "\n")
                 next_state.place(action)
                 
                 # Is game done?
