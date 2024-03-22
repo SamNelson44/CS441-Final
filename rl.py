@@ -9,7 +9,7 @@ from random import shuffle
 GOAL = 3
 NUM_PLAYERS = 2
 STATE_SIZE = HEIGHT * WIDTH * (NUM_PLAYERS + 1)
-ACTION_SIZE = HEIGHT * WIDTH
+ACTION_SIZE = WIDTH
 
 # Slightly modified State class based on Thanh's
 class State(ConnectFour):
@@ -102,9 +102,9 @@ class State(ConnectFour):
         return self.winner
 
 
-def build_neural_network(input_shape, output_shape):
+#def build_neural_network(input_shape, output_shape):
     # Build a neural network model using TensorFlow/Keras
-    pass
+#    pass
 
 
 # Define the Q-learning agent
@@ -120,8 +120,13 @@ class QLearningAgent:
         self.epsilon = epsilon
         
         # Initialize neural network
-        self.model = build_neural_network(STATE_SIZE, ACTION_SIZE)
-
+       # self.model = build_neural_network(STATE_SIZE, ACTION_SIZE)
+    
+    def state_to_index(self, state):
+        state_str = ''.join(str(cell) for row in state for cell in row)
+        row = hash(state_str) % STATE_SIZE
+        col = (row % ACTION_SIZE)
+        return row, col
 
     def random_action(self, valid_actions):
         return random.choice(valid_actions)
@@ -141,9 +146,14 @@ class QLearningAgent:
             result = 0.5  # Draw
             
         return result  # Loss, or game is not done yet
-    
-    def update_q_values(self, state, action, reward, next_state):
-        pass
+        
+    def update_q_values(self, state_index, action, reward, next_state_index):
+        # Get best possible move
+        max_next_q_value = max(self.q_values[next_state_index])
+        
+        # update Q-value
+        new_q_value = self.q_values[state_index, action] + self.learning_rate * (reward + self.discount_factor * max_next_q_value - self.get_q_value(state_index, action))
+        self.q_values[state_index, action] = new_q_value
     
     def train(self, epochs, random):
         state = State()
@@ -166,6 +176,38 @@ class QLearningAgent:
             self.update_q_values(state, action, reward, next_state)
             state = next_state
 
+
+    def train(self, epochs, random):
+        state = State()
+        # Train the agent using Q-learning
+        for _ in range(epochs):
+            state.reset_board()  # Reset the board for each episode
+            done = False
+            while not done:
+                valid_actions = state.next_possible_moves()
+                if random and state.current_player == 'O':
+                    action = self.random_action(valid_actions)
+                else:
+                    action = self.choose_action(state, valid_actions)
+
+                state_index = self.state_to_index(state)
+
+                # Execute action and get next state
+                next_state = deepcopy(state)
+                next_state.place(action)
+                
+                # Is game done?
+                done = state.check_win(state.chips_size[action]-1, action)
+
+                next_state_index = self.state_to_index(next_state)
+
+                reward = self.get_reward(state)
+
+                # Update Q-values
+                self.update_q_matrix(state_index, action, reward, next_state_index)
+
+                # Move to the next state
+                state = next_state
 
 def train_agent(epochs, random=True):
     agent = QLearningAgent(STATE_SIZE, ACTION_SIZE)
