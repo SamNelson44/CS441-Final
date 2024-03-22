@@ -127,7 +127,7 @@ class ConnectFour:
         # Check if the game board is full (draw)
         elif all(self.board[row][col] is not None for col in range(self.WIDTH) for row in range(self.HEIGHT)):
             done = True
-            reward = 0.0  
+            reward = 0.5
         else:
             #game hasn't ended so no rewards
             done = False

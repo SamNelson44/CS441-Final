@@ -1,5 +1,5 @@
 import random
-from main import ConnectFour
+from main import ConnectFour, EMPTY
 
 discount = 0.99
 alpha = 0.3
@@ -10,7 +10,7 @@ class Agent:
         A RL learning agent uses Q table to approximate best action for states
         """
         self.q = dict()
-        self.epsilon = 0.5
+        self.epsilon = 0.8
     
     def update(self, old_state, action, new_state, reward):
         """
@@ -68,12 +68,13 @@ class Agent:
         Given a game state, return action to make (i,j)
 
         """
-        actions = TTT.possible_actions(state)
+        actions = ConnectFour.possible_actions(state)
+        if not actions:
+            actions = ConnectFour.possible_actions(state)
         state_key = tuple(map(tuple,state))
         highest_q = 0
-        epsilon = 0.01
         number = random.random()
-        if number < epsilon:
+        if number < self.epsilon:
             return random.choice(list(actions))
         best_action = list(actions)[0]
         for action in actions:
@@ -86,3 +87,5 @@ class Agent:
                 best_action = action
                 highest_q = current
         return best_action
+
+
