@@ -8,6 +8,7 @@ from random import shuffle
 
 GOAL = 3
 NUM_PLAYERS = 2
+CELL_VALUES = NUM_PLAYERS + 1 # includes empty cell
 STATE_SIZE = HEIGHT * WIDTH * (NUM_PLAYERS + 1)
 ACTION_SIZE = WIDTH
 
@@ -141,17 +142,18 @@ class QLearningAgent:
     #     row = hash(state_str) % STATE_SIZE
     #     col = (row % ACTION_SIZE)
     #     return row, col
-        
+    
+    # 
     def state_to_index(self, state):
         index = 0
         for i in range(HEIGHT):
             for j in range(WIDTH):
                 if state[i][j] == 'X':
-                    index = index * 3 + 1
+                    index = index * (CELL_VALUES) + 1
                 elif state[i][j] == 'O':
-                    index = index * 3 + 2
+                    index = index * (CELL_VALUES) + 2
                 else:
-                    index = index * 3
+                    index = index * (CELL_VALUES)
         return index % STATE_SIZE
 
     def random_action(self, valid_actions):

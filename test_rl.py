@@ -3,7 +3,7 @@ from rl import *
 
 
 # Training the agent
-epochs = 100000
+epochs = 40000
 agent = train_agent(epochs, random=True)
 
 
