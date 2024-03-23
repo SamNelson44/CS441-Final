@@ -67,8 +67,7 @@ class State(ConnectFour):
             # Increase chip size for the column
             self.chips_size[column] += 1
             self.switch_player()
-            print('Player is: ', self.current_player, '\n')
-            self.chips_placed+=1 # Board full counter
+            self.chips_placed +=1 # Board full counter
             result = True
         return result
     
@@ -242,9 +241,9 @@ class QLearningAgent:
 
                 # Move to the next state
                 state = next_state
-            state.__str__
+            print("Game: ", i)    
 
-def train_agent(epochs, random=True):
+def train_agent(epochs, learning_rate=0.1, discount_factor=0.90, epsilon=0.1, random=True):
     agent = QLearningAgent(learning_rate=0.3, discount_factor=0.90, epsilon=0.15)
     
     # Train the agent
@@ -263,21 +262,34 @@ def evaluate_agent(agent, total_games):
     for i in range(total_games):
         state.reset_board()
         done = False
-        while not done:
-            valid_actions = state.next_possible_moves()
-            valid_move = False
-            while not valid_move:
-                action = agent.choose_action(state, valid_actions)
-                print(f'Coordinates :{state.chips_size[action]},{action}', '\n')
-                valid_move = state.place(action) # Ensure move is within bounds
-            done = state.check_win(state.chips_size[action]-1, action)
-            if done:
-                state.__str__
+        for i in range(total_games):
+            state.reset_board()
+            done = False
+            while not done:
+                valid_actions = state.next_possible_moves()
+                valid_move = False
+                while not valid_move: 
+                    if state.current_player == 'O':
+                        action = agent.random_action(valid_actions)
+                    else:
+                        action = agent.choose_action(state, valid_actions)
+                    
+                    print(f'Coordinates :{state.chips_size[action]},{action}', '\n')
+
+                    # Execute action and get next state
+                    valid_move = state.place(action)
+                
+                # Is game done?
+                done = state.check_win(state.chips_size[action]-1, action)
                 reward = agent.get_reward(state)
-                if reward <= 1.0:
-                    wins +=1
-                elif reward <= 0.5:
-                    draws += 1
+
+                if done:
+                    state.__str__()
+                    reward = agent.get_reward(state)
+                    if reward >= 1.0:
+                        wins +=1
+                    elif reward >= 0.4:
+                        draws += 1
     win_rate = wins / total_games
     print("Win rate:", win_rate)
 
