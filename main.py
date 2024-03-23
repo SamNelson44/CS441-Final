@@ -1,12 +1,11 @@
 import copy
 import numpy as np
 
-X = 'X'
-O = 'O'
 EMPTY = None
-WIDTH= 7
+WIDTH = 7
 HEIGHT = 6
 WINCONDITION = 4
+
 
 def check_valid_state(board):
     """
@@ -20,12 +19,19 @@ def check_valid_state(board):
     """
     for col in range(WIDTH):
         if board[0][col] is not None:
-            raise ValueError("Invalid state: Chip at the very top in column {}".format(col))
+            raise ValueError(
+                "Invalid state: Chip at the very top in column {}".format(col)
+            )
 
     for col in range(WIDTH):
         for row in range(1, HEIGHT):
             if board[row][col] is not None and board[row - 1][col] is None:
-                raise ValueError("Invalid state: Chip without support at column {}, row {}".format(col, row))
+                raise ValueError(
+                    "Invalid state: Chip without support at column {}, row {}".format(
+                        col, row
+                    )
+                )
+
 
 class ConnectFour:
     def __init__(self, state=None):
@@ -39,61 +45,48 @@ class ConnectFour:
         self.WIDTH = WIDTH
         self.HEIGHT = HEIGHT
         self.EMPTY = None
-       
-            
+
         if state is None:
-            self.board = [[self.EMPTY for _ in range(self.WIDTH)] for _ in range(self.HEIGHT)]
+            self.board = [
+                [self.EMPTY for _ in range(self.WIDTH)] for _ in range(self.HEIGHT)
+            ]
             # Keep track of how many chips in a column by counting how many chips present in each column
             self.chips_size = [0] * WIDTH
         else:
+            # When constructor is called with a given state, copy the state values
             try:
                 check_valid_state(state)
             except ValueError as e:
                 raise ValueError(str(e))
             self.board = [row[:] for row in state]
-            self.chips_size = [sum(1 for row in self.board if row[col] is not None) for col in range(self.WIDTH)]
+            self.chips_size = [
+                sum(1 for row in self.board if row[col] is not None)
+                for col in range(self.WIDTH)
+            ]
 
+        # start with X player
+        self.current_player = "X"
 
-        #start with X player
-        self.current_player = 'X'
-    
     def switch_player(self):
         """
         Swap self.current_player
         """
-        if self.current_player == 'X':
-            self.current_player = 'O'
+        if self.current_player == "X":
+            self.current_player = "O"
         else:
-            self.current_player = 'X'
-    
+            self.current_player = "X"
+
     def __str__(self):
         result = ""
         for row in self.board:
             for cell in row:
                 if cell is EMPTY:
-                    result += '_ '
+                    result += "_ "
                 else:
-                    result += cell + ' '
-            result += '\n'
+                    result += cell + " "
+            result += "\n"
         return result
-    
-    @classmethod
-    def is_board_empty(cls, board):
-        """
-        Check if all positions on the board are empty.
 
-        Args:
-            board: The game board represented as a 2D list.
-
-        Returns:
-            bool: True if all positions are empty, False otherwise.
-        """
-        for row in board:
-            for cell in row:
-                if cell is not EMPTY:
-                    return False
-        return True
-    
     def place(self, column):
         """
         Place a chip for self.current_player and update the game state.
@@ -107,10 +100,10 @@ class ConnectFour:
             done (bool): A flag indicating whether the episode has terminated.
         """
         if column < 0 or column >= self.WIDTH:
-            raise ValueError(f'Invalid column: {column}')
+            raise ValueError(f"Invalid column: {column}")
 
         if self.chips_size[column] == self.HEIGHT:
-            raise ValueError(f'Too many pieces in column {column}')
+            raise ValueError(f"Too many pieces in column {column}")
 
         # Find the next available row to place the chip
         row = self.chips_size[column]
@@ -122,14 +115,18 @@ class ConnectFour:
         if winner is not None:
             done = True
             # Give a reward if agent won, -1 if lost
-            reward = 1.0 if winner == 'X' else -1.0
+            reward = 1.0 if winner == "X" else -1.0
 
         # Check if the game board is full (draw)
-        elif all(self.board[row][col] is not None for col in range(self.WIDTH) for row in range(self.HEIGHT)):
+        elif all(
+            self.board[row][col] is not None
+            for col in range(self.WIDTH)
+            for row in range(self.HEIGHT)
+        ):
             done = True
             reward = 0.5
         else:
-            #game hasn't ended so no rewards
+            # game hasn't ended so no rewards
             done = False
             reward = 0.0
 
@@ -139,36 +136,34 @@ class ConnectFour:
         # Return the updated state, reward, and whether game ends
         next_state = self.get_state()
         return next_state, reward, done
-    
+
     def get_state(self):
         """
         Returns: A numerical 2D list X: 1, O: -1, None : 0
-            This is so that tensors can use the state
+            This can be used to hash the state
         """
         state_array = np.zeros((self.HEIGHT, self.WIDTH), dtype=np.int32)
         for i in range(self.HEIGHT):
             for j in range(self.WIDTH):
-                if self.board[i][j] == 'X':
+                if self.board[i][j] == "X":
                     state_array[i][j] = 1  # Player 'X' represented by 1
-                elif self.board[i][j] == 'O':
+                elif self.board[i][j] == "O":
                     state_array[i][j] = -1  # Player 'O' represented by -1
 
         return copy.deepcopy(state_array)
-    
-    
+
     @classmethod
     def possible_actions(cls, state):
         """
         Given a game state 2D array, calculate possible place to drop column
 
-        Returns a set of numbers of possible action
+        Returns a set of numbers of possible actions
         """
         actions = set()
 
-        #if there is an empty spot at the top, we can drop chips at the column
+        # if there is an empty spot at the top, we can drop chips at the column
         for column in range(WIDTH):
-            # if state[HEIGHT -1][column] == None and state[HEIGHT -1][column] == 0:
-            if state[HEIGHT -1][column] == 0 or state[HEIGHT -1][column] == None:
+            if state[HEIGHT - 1][column] == 0 or state[HEIGHT - 1][column] == None:
                 actions.add(column)
         return actions
 
@@ -210,10 +205,3 @@ class ConnectFour:
             if self.board[row][col] != current_chip:
                 return None
         return current_chip
-    
-    def reset(self):
-        self.board = [[self.EMPTY for _ in range(self.WIDTH)] for _ in range(self.HEIGHT)]
-        self.chips_size = [0] * WIDTH
-        return self.get_state()
-        
-

@@ -1,8 +1,6 @@
 import random
 from main import ConnectFour, EMPTY
 
-discount = 0.99
-alpha = 0.3
 
 class Agent:
     def __init__(self):
@@ -11,30 +9,32 @@ class Agent:
         """
         self.q = dict()
         self.epsilon = 0.8
-    
+        self.discount = 0.9
+        self.alpha = 0.2
+
     def update(self, old_state, action, new_state, reward):
         """
-        Update a value of Q(s,a) based on the previous state, new state, 
+        Update a value of Q(s,a) based on the previous state, new state,
         and reward recieved from doing the action
         """
-        old = self.get_q_value(old_state,action)
+        old = self.get_q_value(old_state, action)
         future_rewards = self.best_action(new_state)
         self.update_q_value(old_state, action, old, reward, future_rewards)
-    
+
     def get_q_value(self, state, action):
         """
         Return Q(s,a)
         If not exist yet, should be 0
         """
         try:
-            #convert state into a tuple
-            #This allows for hashing the state,action to a value
-            state_key = tuple(map(tuple, state)) 
+            # convert state into a tuple
+            # This allows for hashing the state,action to a value
+            state_key = tuple(map(tuple, state))
             key = (state_key, action)
-            return self.q[key] 
-        except KeyError: #if key doesn't exist then qvalue is 0
+            return self.q[key]
+        except KeyError:  # if key doesn't exist then qvalue is 0
             return 0
-    
+
     def best_action(self, state):
         """
         Given a state get the maximum q-value we can get from all possible action
@@ -44,10 +44,10 @@ class Agent:
         state_key = tuple(map(tuple, state))
         for action in actions:
             try:
-                #attempt to get q value
+                # attempt to get q value
                 q_value = self.q[(state_key, action)]
             except KeyError:
-                #if it doesn't exist, initialize it
+                # if it doesn't exist, initialize it
                 self.q[(state_key), action] = 0
             else:
                 if q_value > highest_q:
@@ -58,11 +58,10 @@ class Agent:
         """
         Using RL formula to calculate the new Q(s,a) value
         """
-        new_estimate = reward + discount * (future_rewards)
-        new_q = old_q + alpha * (new_estimate - old_q)
-        value = self.q[(tuple(map(tuple,state)), action)] = new_q
-        # print(value)
-    
+        new_estimate = reward + self.discount * (future_rewards)
+        new_q = old_q + self.alpha * (new_estimate - old_q)
+        self.q[(tuple(map(tuple, state)), action)] = new_q
+
     def choose_action(self, state):
         """
         Given a game state, return action to make (i,j)
@@ -71,7 +70,7 @@ class Agent:
         actions = ConnectFour.possible_actions(state)
         if not actions:
             actions = ConnectFour.possible_actions(state)
-        state_key = tuple(map(tuple,state))
+        state_key = tuple(map(tuple, state))
         highest_q = 0
         number = random.random()
         if number < self.epsilon:
@@ -86,6 +85,7 @@ class Agent:
             if current > highest_q:
                 best_action = action
                 highest_q = current
+        # if all moves are equivalent, then choose randomly
+        if highest_q == 0:
+            best_action = random.choice(list(actions))
         return best_action
-
-
