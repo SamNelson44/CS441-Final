@@ -1,224 +1,207 @@
 import copy
+import numpy as np
 
-X = 'X'
-O = 'O'
 EMPTY = None
-WIDTH= 7
+WIDTH = 7
 HEIGHT = 6
 WINCONDITION = 4
 
+
+def check_valid_state(board):
+    """
+    Check if the current game state is valid.
+
+    Args:
+        board: The game board represented as a 2D list.
+
+    Raises:
+        ValueError: If the state is invalid.
+    """
+    for col in range(WIDTH):
+        if board[0][col] is not None:
+            raise ValueError(
+                "Invalid state: Chip at the very top in column {}".format(col)
+            )
+
+    for col in range(WIDTH):
+        for row in range(1, HEIGHT):
+            if board[row][col] is not None and board[row - 1][col] is None:
+                raise ValueError(
+                    "Invalid state: Chip without support at column {}, row {}".format(
+                        col, row
+                    )
+                )
+
+
 class ConnectFour:
-    def __init__(self):
+    def __init__(self, state=None):
         """
         Initialize the game state
+
+        Args:
+            optional 2D state
+            If None, the board will all be empty
         """
-        self.board = [[EMPTY for _ in range(WIDTH)] for _ in range(HEIGHT)]
+        self.WIDTH = WIDTH
+        self.HEIGHT = HEIGHT
+        self.EMPTY = None
 
-        #keep track of how many chips in a column
-        #initially [0,0,0,0,0,0,0] if WIDTH is 7
-        #[0,1,0,0,0,0,0] means 1 chip at column 2
-        self.chips_size = [0] * WIDTH
+        if state is None:
+            self.board = [
+                [self.EMPTY for _ in range(self.WIDTH)] for _ in range(self.HEIGHT)
+            ]
+            # Keep track of how many chips in a column by counting how many chips present in each column
+            self.chips_size = [0] * WIDTH
+        else:
+            # When constructor is called with a given state, copy the state values
+            try:
+                check_valid_state(state)
+            except ValueError as e:
+                raise ValueError(str(e))
+            self.board = [row[:] for row in state]
+            self.chips_size = [
+                sum(1 for row in self.board if row[col] is not None)
+                for col in range(self.WIDTH)
+            ]
 
-        self.current_player = 'X'
-    
+        # start with X player
+        self.current_player = "X"
+
     def switch_player(self):
         """
         Swap self.current_player
         """
-        if self.current_player == 'X':
-            self.current_player = 'O'
+        if self.current_player == "X":
+            self.current_player = "O"
         else:
-            self.current_player = 'X'
-    
+            self.current_player = "X"
+
     def __str__(self):
         result = ""
         for row in self.board:
             for cell in row:
                 if cell is EMPTY:
-                    result += '_ '
+                    result += "_ "
                 else:
-                    result += cell + ' '
-            result += '\n'
+                    result += cell + " "
+            result += "\n"
         return result
-    
+
     def place(self, column):
         """
-        place a chip for self.current_player
-        """
-        if column < 0 or column >= WIDTH:
-            raise ValueError(f'Invalid column :{column}')
-        elif self.chips_size[column] == HEIGHT:
-            raise ValueError(f'Too many pieces at column {column}')
-        else:
-            #check which row to add the chip using chips_size at column
-            #add at the end of the array
-            row = (HEIGHT - 1) - self.chips_size[column]
-            self.board[row][column] = self.current_player
+        Place a chip for self.current_player and update the game state.
 
-            #increase chip size for the column
-            self.chips_size[column] += 1
-            self.switch_player()
-    
+        Parameters:
+            column: Which column to place chip
+
+        Returns:
+            next_state : State after actioin
+            reward: The reward obtained by the agent for the action.
+            done (bool): A flag indicating whether the episode has terminated.
+        """
+        if column < 0 or column >= self.WIDTH:
+            raise ValueError(f"Invalid column: {column}")
+
+        if self.chips_size[column] == self.HEIGHT:
+            raise ValueError(f"Too many pieces in column {column}")
+
+        # Find the next available row to place the chip
+        row = self.chips_size[column]
+        self.board[row][column] = self.current_player
+        self.chips_size[column] += 1
+
+        # Check if the current player has won
+        winner = self.terminal()
+        if winner is not None:
+            done = True
+            # Give a reward if agent won, -1 if lost
+            reward = 1.0 if winner == "X" else -1.0
+
+        # Check if the game board is full (draw)
+        elif all(
+            self.board[row][col] is not None
+            for col in range(self.WIDTH)
+            for row in range(self.HEIGHT)
+        ):
+            done = True
+            reward = 0.5
+        else:
+            # game hasn't ended so no rewards
+            done = False
+            reward = 0.0
+
+        # Switch the current player for the next turn
+        self.switch_player()
+
+        # Return the updated state, reward, and whether game ends
+        next_state = self.get_state()
+        return next_state, reward, done
+
     def get_state(self):
         """
-        Returns: A copy of current state representation using deep copy
+        Returns: A numerical 2D list X: 1, O: -1, None : 0
+            This can be used to hash the state
         """
-        return copy.deepcopy(self.board)
-    
+        state_array = np.zeros((self.HEIGHT, self.WIDTH), dtype=np.int32)
+        for i in range(self.HEIGHT):
+            for j in range(self.WIDTH):
+                if self.board[i][j] == "X":
+                    state_array[i][j] = 1  # Player 'X' represented by 1
+                elif self.board[i][j] == "O":
+                    state_array[i][j] = -1  # Player 'O' represented by -1
+
+        return copy.deepcopy(state_array)
+
     @classmethod
     def possible_actions(cls, state):
         """
         Given a game state 2D array, calculate possible place to drop column
 
-        Returns a set of numbers of possible action
+        Returns a set of numbers of possible actions
         """
         actions = set()
 
-        #if there is an empty spot at the top, we can drop chips at the column
+        # if there is an empty spot at the top, we can drop chips at the column
         for column in range(WIDTH):
-            if state[0][column] == EMPTY:
+            if state[HEIGHT - 1][column] == 0 or state[HEIGHT - 1][column] == None:
                 actions.add(column)
         return actions
-    
+
     def terminal(self):
         """
-        Check if the game has ended
+        Check if the game has a winner or draw
+
+        Returns:
+            'X' or 'O' if there is one winner.  None if no winner
         """
-        #check for vertical wins
+        directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
 
-        for column in range(WIDTH):
-                #start at the first chip at [5][0] index
-                current = self.board[HEIGHT -1][column]
-                
-                connecting = 1
-                #next chip to compare should start at row 4, Height - 2
-                for i in range(2, HEIGHT + 1):
-                    if current== None:
-                        break
-                    next_row = HEIGHT - i
-                    next_chip = self.board[next_row][column]
-                    if next_chip != EMPTY and current == next_chip:
-                        connecting += 1
-                        if connecting == WINCONDITION:
-                            return current
-                    else:
-                        current = next_chip
-                        connecting = 1
-        
-        #check for horizontal
-        for i in range(HEIGHT):
-            row = HEIGHT - 1 - i
-            current = self.board[row][0]
-            connecting = 1
-
-            for j in range(WIDTH -1):
-                if current == None:
-                    continue
-                next_column = j + 1
-                next_chip = self.board[row][next_column]
-                if next_chip != EMPTY and current == next_chip:
-                    connecting += 1
-                    if connecting == WINCONDITION:
-                        return current
-                else:
-                    current = next_chip
-                    connecting = 1
-        
-
-        #checking for diagonals going upward left to right: /
-        for column in range(WIDTH):
-            #start at the first chip [5][0]
-            current = self.board[HEIGHT -1][column]
-            
-            connecting = 1
-            #next row to compare should be 4th row index, Height -2
-            #next column to compare should be 2nd column index
-            for i in range(2, HEIGHT + 1):
-                if current== None:
-                    break
-                next_row = HEIGHT - i
-                next_column = column + (i-1)
-                try:
-                    next_chip = self.board[next_row][next_column] #adjust column to be + 1 of current column
-                except IndexError:
-                    break #go to next chip if out of bounds
-                if next_chip != EMPTY and current == next_chip:
-                    connecting += 1
-                    if connecting == WINCONDITION:
-                        return current
-                else:
-                    current = next_chip
-                    connecting = 1
-        
-        #check for diagonal downward going left to right: \    
-        #start at row 2: HEIGHT(6) - (WINCONDITION)4
-        current_row = HEIGHT - WINCONDITION
-        current_col = 0
-        while current_row>= 0:
-            current = self.board[current_row][0]
-            next_row = current_row
-            next_col = current_col
-            connecting = 1
-            while True:
-                next_row += 1
-                next_col += 1
-                #may be out of bounds array
-                try:
-                    next_chip = self.board[next_row][next_col]
-                except IndexError:
-                    #go to next row if we go out of array
-                    current_row -= 1
-                    break
-                if next_chip != EMPTY and next_chip == current:
-                    connecting += 1
-                    if connecting == WINCONDITION:
-                        return current
-                else:
-                    current = next_chip
-                    connecting = 1
-
-        #check for each column
-        #start at col 1 until 3 away from WIDTH (WIDTH - (WINCONDITION - 1))
-        current_row = 0
-        current_col = 1
-        while current_col < (WIDTH - (WINCONDITION -1)):
-            connecting = 1
-            current = self.board[current_row][current_col]
-            next_row = current_row
-            next_col = current_col
-            while True:
-                next_row += 1
-                next_col += 1
-                #may be out of bounds array
-                try:
-                    next_chip = self.board[next_row][next_col]
-                except IndexError:
-                    #go to next colum if we go out of array
-                    current_col += 1
-                    break
-                if next_chip != EMPTY and next_chip == current:
-                    connecting += 1
-                    if connecting == WINCONDITION:
-                        return current
-                else:
-                    current = next_chip
-                    connecting = 1
+        for row in range(HEIGHT):
+            for col in range(WIDTH):
+                for dy, dx in directions:
+                    winner = self.check_consecutive(row, col, dy, dx)
+                    if winner is not None:
+                        return winner
         return None
 
-                            
+    def check_consecutive(self, row, col, dy, dx):
+        """
+        Parameters:
+            row, col: starting location for chip
+            dy, dx : which way to compare chips
+        Returns:
+            'X', 'O', or None if no winner
+        """
+        current_chip = self.board[row][col]
+        if current_chip is None:
+            return None
 
-
-
-
-    
-game = ConnectFour()
-game.place(1)
-game.place(1)
-game.place(1)
-game.place(1)
-game.place(1)
-game.place(1)
-#placing one more at column 1 will raise exception
-# game.place(1)
-game.place(2)
-print(game)
+        for _ in range(WINCONDITION - 1):
+            row += dy
+            col += dx
+            # Check if position is out of bounds
+            if not (0 <= row < HEIGHT and 0 <= col < WIDTH):
+                return None
+            if self.board[row][col] != current_chip:
+                return None
+        return current_chip
